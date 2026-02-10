@@ -1,0 +1,131 @@
+from rest_framework import viewsets, status, permissions
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from django.db import connections
+
+from .models import Report, ReportParameter, ReportPermission
+from .serializers import (
+    ReportListSerializer, ReportDetailSerializer,
+    ReportCreateUpdateSerializer, ReportPermissionSerializer,
+)
+from .permissions import CanModifyReport, can_modify_report
+
+
+class ReportViewSet(viewsets.ModelViewSet):
+    """CRUD ViewSet for Reports (admin / owner use)."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_staff:
+            return Report.objects.all()
+        from .permissions import get_executable_reports_queryset
+        # For list, show reports user can see (own + public + permitted)
+        return Report.objects.filter(owner=user) | Report.objects.filter(visibility='public')
+
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return ReportListSerializer
+        if self.action in ('create', 'update', 'partial_update'):
+            return ReportCreateUpdateSerializer
+        return ReportDetailSerializer
+
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
+
+    def check_object_permissions(self, request, obj):
+        super().check_object_permissions(request, obj)
+        if request.method in ('PUT', 'PATCH', 'DELETE'):
+            if not can_modify_report(request.user, obj):
+                self.permission_denied(request, message="Vous n'avez pas le droit de modifier ce rapport.")
+
+    @action(detail=True, methods=['post'], url_path='test-query')
+    def test_query(self, request, pk=None):
+        """Test a report's SQL query with default parameters."""
+        report = self.get_object()
+        if not can_modify_report(request.user, report):
+            return Response(
+                {'error': "Vous n'avez pas le droit de tester ce rapport."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        sql = report.sql_query
+        params = {}
+        for param in report.parameters.all():
+            if param.default_value:
+                params[param.name] = param.default_value
+
+        try:
+            # Use the report's datasource if configured, otherwise default
+            if report.datasource:
+                conn = report.datasource.get_connection()
+                cursor = conn.cursor()
+
+                # For Oracle, replace :param_name placeholders directly
+                if report.datasource.db_type == 'oracle':
+                    cursor.execute(sql, params)
+                else:
+                    # For PostgreSQL/MySQL, replace :param with %(param)s
+                    processed_sql = sql
+                    for param_name in params:
+                        processed_sql = processed_sql.replace(f':{param_name}', f'%({param_name})s')
+                    cursor.execute(processed_sql, params)
+
+                columns = [col[0] for col in cursor.description] if cursor.description else []
+                rows = cursor.fetchmany(100)
+                cursor.close()
+                conn.close()
+            else:
+                # Fallback to Django default connection
+                from django.db import connections
+                with connections['default'].cursor() as cursor:
+                    processed_sql = sql
+                    for param_name in params:
+                        processed_sql = processed_sql.replace(f':{param_name}', f'%({param_name})s')
+                    cursor.execute(processed_sql, params)
+                    columns = [col[0] for col in cursor.description] if cursor.description else []
+                    rows = cursor.fetchmany(100)
+
+            return Response({
+                'columns': columns,
+                'rows': [dict(zip(columns, row)) for row in rows],
+                'row_count': len(rows),
+                'truncated': len(rows) == 100,
+            })
+        except Exception as e:
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+    @action(detail=True, methods=['get', 'post', 'delete'], url_path='permissions')
+    def manage_permissions(self, request, pk=None):
+        """Manage permissions for a report."""
+        report = self.get_object()
+        if not can_modify_report(request.user, report):
+            return Response(
+                {'error': "Vous n'avez pas le droit de gérer les permissions."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        if request.method == 'GET':
+            perms = report.permissions.all()
+            serializer = ReportPermissionSerializer(perms, many=True)
+            return Response(serializer.data)
+
+        if request.method == 'POST':
+            serializer = ReportPermissionSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save(report=report)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        if request.method == 'DELETE':
+            perm_id = request.data.get('id')
+            if not perm_id:
+                return Response(
+                    {'error': "ID de permission requis."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            report.permissions.filter(id=perm_id).delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
