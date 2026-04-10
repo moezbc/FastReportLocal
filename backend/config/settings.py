@@ -1,12 +1,21 @@
-import os
 from pathlib import Path
 from datetime import timedelta
+import os
+
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-dev-key')
 DEBUG = os.environ.get('DEBUG', 'True').lower() in ('true', '1', 'yes')
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '*').split(',')
+
+BACKEND_URL = os.environ.get('BACKEND_URL', 'http://localhost:8000')
+MAX_EMAIL_ATTACHMENT_SIZE = int(os.environ.get('MAX_EMAIL_ATTACHMENT_SIZE', 5 * 1024 * 1024)) # 5MB
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -68,6 +77,9 @@ DATABASES = {
         'PASSWORD': os.environ.get('POSTGRES_PASSWORD', 'edi_password'),
         'HOST': os.environ.get('POSTGRES_HOST', 'host.docker.internal'),
         'PORT': os.environ.get('POSTGRES_PORT', '5432'),
+        'OPTIONS': {
+            'options': '-c client_encoding=utf8',
+        },
     }
 }
 
@@ -97,7 +109,7 @@ CORS_ALLOWED_ORIGINS = [
     origin.strip()
     for origin in os.environ.get(
         'CORS_ALLOWED_ORIGINS',
-        'http://localhost:5173,http://127.0.0.1:5173'
+        'http://localhost:5173,http://127.0.0.1:5173,http://localhost:4173,http://127.0.0.1:4173'
     ).split(',')
 ]
 CORS_ALLOW_CREDENTIALS = True

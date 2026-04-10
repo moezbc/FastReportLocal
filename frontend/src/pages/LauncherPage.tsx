@@ -189,10 +189,10 @@ const LauncherPage: React.FC = () => {
     return (
         <div className="h-full flex">
             {/* Left panel – Report list */}
-            <div className="w-80 xl:w-96 flex-shrink-0 border-r border-surface-800 flex flex-col bg-surface-900/30">
+            <div className="w-80 xl:w-96 flex-shrink-0 border-r border-surface-200 dark:border-surface-800 flex flex-col bg-surface-50 dark:bg-surface-900/30">
                 {/* Search header */}
-                <div className="p-4 border-b border-surface-800">
-                    <h2 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
+                <div className="p-4 border-b border-surface-200 dark:border-surface-800">
+                    <h2 className="text-lg font-bold text-surface-900 dark:text-white mb-3 flex items-center gap-2">
                         <HiOutlineRocketLaunch className="w-5 h-5 text-primary-400" />
                         Lanceur
                     </h2>
@@ -213,7 +213,7 @@ const LauncherPage: React.FC = () => {
                     {loadingList ? (
                         <div className="space-y-3">
                             {[1, 2, 3, 4].map((i) => (
-                                <div key={i} className="h-20 bg-surface-800/40 rounded-xl animate-pulse" />
+                                <div key={i} className="h-20 bg-surface-200 dark:bg-surface-800/40 rounded-xl animate-pulse" />
                             ))}
                         </div>
                     ) : filteredReports.length === 0 ? (
@@ -235,7 +235,7 @@ const LauncherPage: React.FC = () => {
                     )}
                 </div>
 
-                <div className="p-3 border-t border-surface-800">
+                <div className="p-3 border-t border-surface-200 dark:border-surface-800">
                     <p className="text-xs text-surface-600 text-center">
                         {filteredReports.length} rapport{filteredReports.length !== 1 ? 's' : ''} disponible{filteredReports.length !== 1 ? 's' : ''}
                     </p>
@@ -247,7 +247,7 @@ const LauncherPage: React.FC = () => {
                 {!selectedId ? (
                     <div className="h-full flex items-center justify-center">
                         <div className="text-center">
-                            <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-surface-800/40 flex items-center justify-center">
+                            <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-surface-100 dark:bg-surface-800/40 flex items-center justify-center">
                                 <HiOutlineRocketLaunch className="w-8 h-8 text-surface-600" />
                             </div>
                             <h3 className="text-lg font-semibold text-surface-400 mb-1">Sélectionnez un rapport</h3>
@@ -256,16 +256,16 @@ const LauncherPage: React.FC = () => {
                     </div>
                 ) : loadingDetail ? (
                     <div className="p-8 space-y-4">
-                        <div className="h-8 w-64 bg-surface-800/40 rounded-lg animate-pulse" />
-                        <div className="h-4 w-full bg-surface-800/40 rounded-lg animate-pulse" />
-                        <div className="h-4 w-3/4 bg-surface-800/40 rounded-lg animate-pulse" />
+                        <div className="h-8 w-64 bg-surface-200 dark:bg-surface-800/40 rounded-lg animate-pulse" />
+                        <div className="h-4 w-full bg-surface-200 dark:bg-surface-800/40 rounded-lg animate-pulse" />
+                        <div className="h-4 w-3/4 bg-surface-200 dark:bg-surface-800/40 rounded-lg animate-pulse" />
                     </div>
                 ) : reportDetail ? (
                     <div className="p-6 xl:p-8 max-w-4xl space-y-6">
                         {/* Report header */}
                         <div className="animate-slide-up">
                             <div className="flex items-center gap-3 mb-2">
-                                <h2 className="text-2xl font-bold text-white">{reportDetail.name}</h2>
+                                <h2 className="text-2xl font-bold text-surface-900 dark:text-white">{reportDetail.name}</h2>
                                 <span className={reportDetail.visibility === 'public' ? 'badge-public' : 'badge-private'}>
                                     {reportDetail.visibility === 'public' ? 'Public' : 'Privé'}
                                 </span>
@@ -315,8 +315,8 @@ const LauncherPage: React.FC = () => {
                                     type="button"
                                     onClick={() => setExecutionMode('immediate')}
                                     className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium transition-all ${executionMode === 'immediate'
-                                            ? 'bg-primary-600/20 text-primary-300 border border-primary-500/30 shadow-glow'
-                                            : 'bg-surface-800/50 text-surface-400 border border-surface-700/50 hover:text-surface-200'
+                                            ? 'bg-primary-50 dark:bg-primary-600/20 text-primary-700 dark:text-primary-300 border border-primary-200 dark:border-primary-500/30 shadow-sm dark:shadow-glow'
+                                            : 'bg-white dark:bg-surface-800/50 text-surface-600 dark:text-surface-400 border border-surface-200 dark:border-surface-700/50 hover:text-surface-900 dark:hover:text-surface-200 hover:bg-surface-50 dark:hover:bg-surface-800/60'
                                         }`}
                                 >
                                     <HiOutlineBolt className="w-5 h-5" />
@@ -326,8 +326,8 @@ const LauncherPage: React.FC = () => {
                                     type="button"
                                     onClick={() => setExecutionMode('deferred')}
                                     className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium transition-all ${executionMode === 'deferred'
-                                            ? 'bg-accent-600/20 text-accent-300 border border-accent-500/30 shadow-glow-accent'
-                                            : 'bg-surface-800/50 text-surface-400 border border-surface-700/50 hover:text-surface-200'
+                                            ? 'bg-accent-50 dark:bg-accent-600/20 text-accent-700 dark:text-accent-300 border border-accent-200 dark:border-accent-500/30 shadow-sm dark:shadow-glow-accent'
+                                            : 'bg-white dark:bg-surface-800/50 text-surface-600 dark:text-surface-400 border border-surface-200 dark:border-surface-700/50 hover:text-surface-900 dark:hover:text-surface-200 hover:bg-surface-50 dark:hover:bg-surface-800/60'
                                         }`}
                                 >
                                     <HiOutlineCalendarDays className="w-5 h-5" />

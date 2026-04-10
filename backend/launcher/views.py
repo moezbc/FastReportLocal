@@ -10,6 +10,7 @@ from rest_framework.views import APIView
 from reports.models import Report, ReportExecution, ReportSchedule
 from reports.permissions import get_executable_reports_queryset, can_execute_report
 from reports.serializers import ReportExecutionSerializer, ReportScheduleSerializer
+from django.core.signing import Signer, BadSignature
 
 from .serializers import (
     LauncherReportListSerializer,
@@ -103,6 +104,62 @@ class LauncherReportListView(APIView):
         reports = get_executable_reports_queryset(request.user)
         serializer = LauncherReportListSerializer(reports, many=True)
         return Response(serializer.data)
+
+
+class ExecutionDownloadView(APIView):
+    """
+    GET /api/report-launcher/executions/{id}/download/?token=...
+    Download a large report result file natively. No auth required since token is signed.
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request, pk):
+        token = request.query_params.get('token')
+        if not token:
+            return Response(
+                {'error': 'Jeton manquant.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        signer = Signer()
+        try:
+            unsigned_pk = signer.unsign(token)
+        except BadSignature:
+            return Response(
+                {'error': 'Le lien de téléchargement est invalide ou a expiré.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if str(pk) != unsigned_pk:
+            return Response(
+                {'error': 'Lien incorrect.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            execution = ReportExecution.objects.select_related('report').get(pk=pk)
+        except ReportExecution.DoesNotExist:
+            return Response(
+                {'error': 'Exécution introuvable.'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        if not execution.result_file:
+            return Response(
+                {'error': 'Le fichier de ce rapport n\'existe pas.'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        from django.http import FileResponse
+        try:
+            filename = f"{execution.report.name}_{execution.started_at.strftime('%Y%m%d_%H%M%S')}.{execution.output_type.lower()}"
+            response = FileResponse(execution.result_file.open('rb'), as_attachment=True, filename=filename)
+            return response
+        except FileNotFoundError:
+            return Response(
+                {'error': 'Fichier supprimé ou inaccessible sur le serveur.'},
+                status=status.HTTP_404_NOT_FOUND
+            )
 
 
 class LauncherReportDetailView(APIView):

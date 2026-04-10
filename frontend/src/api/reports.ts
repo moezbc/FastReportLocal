@@ -14,6 +14,8 @@ export interface Report {
     output_types: string[];
     routing_modes: string[];
     csv_separator: string;
+    category?: string | null;
+    email_body?: string;
     parameters?: ReportParameter[];
     permissions?: ReportPermission[];
     created_at: string;
@@ -69,5 +71,9 @@ export const testQuery = (id: number) =>
     api.post<{ columns: string[]; rows: any[]; row_count: number; truncated: boolean }>(
         `/reports/${id}/test-query/`
     );
-
-export const fetchExecutions = () => api.get<ReportExecution[]>('/report-launcher/executions/');
+// ─── Permissions Calls ─────────────────────────────
+export const fetchPermissions = (id: number) => api.get<ReportPermission[]>(`/reports/${id}/permissions/`);
+export const addPermission = (id: number, data: Omit<ReportPermission, 'id'>) =>
+    api.post<ReportPermission>(`/reports/${id}/permissions/`, data);
+export const removePermission = (id: number, permissionId: number) =>
+    api.delete(`/reports/${id}/permissions/`, { data: { id: permissionId } });

@@ -9,6 +9,8 @@ import ConnectionsPage from './pages/ConnectionsPage';
 import SettingsPage from './pages/SettingsPage';
 import ExecutionsPage from './pages/ExecutionsPage';
 import SchedulesPage from './pages/SchedulesPage';
+import DashboardPage from './pages/DashboardPage';
+import UsersGroupsPage from './pages/UsersGroupsPage';
 import AppLayout from './components/layout/AppLayout';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -27,34 +29,40 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
     return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
 };
 
+import { ThemeProvider } from './contexts/ThemeContext';
+
 const App: React.FC = () => {
     return (
         <BrowserRouter>
-            <AuthProvider>
-                <Routes>
-                    <Route path="/login" element={<LoginPage />} />
-                    <Route
-                        path="/*"
-                        element={
-                            <ProtectedRoute>
-                                <AppLayout>
-                                    <Routes>
-                                        <Route path="/" element={<Navigate to="/launcher" replace />} />
-                                        <Route path="/launcher" element={<LauncherPage />} />
-                                        <Route path="/reports" element={<ReportsPage />} />
-                                        <Route path="/reports/new" element={<ReportFormPage />} />
-                                        <Route path="/reports/:id/edit" element={<ReportFormPage />} />
-                                        <Route path="/connections" element={<ConnectionsPage />} />
-                                        <Route path="/settings" element={<SettingsPage />} />
-                                        <Route path="/executions" element={<ExecutionsPage />} />
-                                        <Route path="/schedules" element={<SchedulesPage />} />
-                                    </Routes>
-                                </AppLayout>
-                            </ProtectedRoute>
-                        }
-                    />
-                </Routes>
-            </AuthProvider>
+            <ThemeProvider>
+                <AuthProvider>
+                    <Routes>
+                        <Route path="/login" element={<LoginPage />} />
+                        <Route
+                            path="/*"
+                            element={
+                                <ProtectedRoute>
+                                    <AppLayout>
+                                        <Routes>
+                                            <Route path="/" element={<Navigate to="/launcher" replace />} />
+                                            <Route path="/dashboard" element={<DashboardPage />} />
+                                            <Route path="/launcher" element={<LauncherPage />} />
+                                            <Route path="/reports" element={<ReportsPage />} />
+                                            <Route path="/reports/new" element={<ReportFormPage />} />
+                                            <Route path="/reports/:id/edit" element={<ReportFormPage />} />
+                                            <Route path="/connections" element={<ConnectionsPage />} />
+                                            <Route path="/settings" element={<SettingsPage />} />
+                                            <Route path="/users-groups" element={<UsersGroupsPage />} />
+                                            <Route path="/executions" element={<ExecutionsPage />} />
+                                            <Route path="/schedules" element={<SchedulesPage />} />
+                                        </Routes>
+                                    </AppLayout>
+                                </ProtectedRoute>
+                            }
+                        />
+                    </Routes>
+                </AuthProvider>
+            </ThemeProvider>
         </BrowserRouter>
     );
 };

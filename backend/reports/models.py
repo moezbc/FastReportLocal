@@ -55,6 +55,29 @@ class Report(models.Model):
         default=',',
         verbose_name="Séparateur CSV"
     )
+
+    CATEGORY_CHOICES = [
+        ('Retail', 'Retail'),
+        ('Finance', 'Finance'),
+        ('industrie', 'Industrie'),
+        ('distribution', 'Distribution'),
+        ('Taiwan', 'Taiwan'),
+    ]
+
+    category = models.CharField(
+        max_length=50,
+        choices=CATEGORY_CHOICES,
+        null=True,
+        blank=True,
+        verbose_name="Catégorie"
+    )
+    email_body = models.TextField(
+        blank=True,
+        default='',
+        verbose_name="Corps de l'email",
+        help_text="Corps du message lors de l'envoi par email"
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

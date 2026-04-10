@@ -15,16 +15,16 @@ const ReportCard: React.FC<ReportCardProps> = ({ report, selected, onClick }) =>
         <button
             onClick={onClick}
             className={`w-full text-left p-4 rounded-xl transition-all duration-200 group ${selected
-                    ? 'bg-primary-600/15 border border-primary-500/30 shadow-glow'
-                    : 'bg-surface-800/40 border border-surface-700/30 hover:bg-surface-800/60 hover:border-surface-600/50'
+                    ? 'bg-primary-50 dark:bg-primary-600/15 border border-primary-200 dark:border-primary-500/30'
+                    : 'bg-white dark:bg-surface-800/40 border border-surface-200 dark:border-surface-700/30 hover:bg-surface-50 dark:hover:bg-surface-800/60 hover:border-surface-300 dark:hover:border-surface-600/50'
                 }`}
         >
             <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                        <HiOutlineDocumentText className={`w-4 h-4 flex-shrink-0 ${selected ? 'text-primary-400' : 'text-surface-500 group-hover:text-surface-400'
+                        <HiOutlineDocumentText className={`w-4 h-4 flex-shrink-0 ${selected ? 'text-primary-600 dark:text-primary-400' : 'text-surface-500 group-hover:text-surface-600 dark:group-hover:text-surface-400'
                             }`} />
-                        <h3 className={`text-sm font-semibold truncate ${selected ? 'text-primary-300' : 'text-surface-200 group-hover:text-white'
+                        <h3 className={`text-sm font-semibold truncate ${selected ? 'text-primary-700 dark:text-primary-300' : 'text-surface-700 dark:text-surface-200 group-hover:text-surface-900 dark:hover:text-white'
                             }`}>
                             {report.name}
                         </h3>

@@ -73,11 +73,11 @@ const ScheduleModal: React.FC<ScheduleModalProps> = ({ reportName, onConfirm, on
                             <HiOutlineCalendarDays className="w-5 h-5 text-accent-400" />
                         </div>
                         <div>
-                            <h2 className="text-lg font-bold text-white">Planifier l'exécution</h2>
+                            <h2 className="text-lg font-bold text-surface-900 dark:text-white">Planifier l'exécution</h2>
                             <p className="text-xs text-surface-500">{reportName}</p>
                         </div>
                     </div>
-                    <button onClick={onClose} className="p-2 text-surface-500 hover:text-white rounded-lg hover:bg-surface-700/50 transition-all">
+                    <button onClick={onClose} className="p-2 text-surface-500 hover:text-surface-900 dark:hover:text-white rounded-lg hover:bg-surface-700/50 transition-all">
                         <HiOutlineXMark className="w-5 h-5" />
                     </button>
                 </div>

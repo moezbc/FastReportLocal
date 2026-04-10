@@ -1,4 +1,17 @@
 from django.db import models
+import oracledb
+import logging
+
+logger = logging.getLogger(__name__)
+
+try:
+    oracledb.init_oracle_client(lib_dir=r"C:\oracle\instantclient")
+except Exception as e:
+    # This is expected if Oracle Client libraries are not found or if the OS is not compatible
+    # The app should continue to functionality, but Oracle connections might fail with "Thin mode" errors
+    # for older DB versions.
+    logger.warning(f"Failed to initialize Oracle Client (Thick mode): {e}")
+
 
 
 class DataSource(models.Model):

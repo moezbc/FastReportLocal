@@ -2,6 +2,7 @@ from rest_framework import viewsets, status, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.db import connections
+from django.db.models import Q
 
 from .models import Report, ReportParameter, ReportPermission
 from .serializers import (
@@ -22,7 +23,12 @@ class ReportViewSet(viewsets.ModelViewSet):
             return Report.objects.all()
         from .permissions import get_executable_reports_queryset
         # For list, show reports user can see (own + public + permitted)
-        return Report.objects.filter(owner=user) | Report.objects.filter(visibility='public')
+        # We want to show reports where user is owner OR has can_modify=True
+        return Report.objects.filter(
+            Q(owner=user) | 
+            Q(permissions__user=user, permissions__can_modify=True) |
+            Q(permissions__group__in=user.groups.all(), permissions__can_modify=True)
+        ).distinct()
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -129,3 +135,71 @@ class ReportViewSet(viewsets.ModelViewSet):
                 )
             report.permissions.filter(id=perm_id).delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class DashboardStatsView(viewsets.ViewSet):
+    """
+    API endpoint that returns dashboard statistics.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def list(self, request):
+        from django.utils import timezone
+        from datetime import timedelta
+        from django.db.models import Count
+        from .models import ReportExecution, ReportSchedule
+
+        # 1. Total reports (accessible to user)
+        if request.user.is_staff:
+            total_reports = Report.objects.count()
+        else:
+            total_reports = (Report.objects.filter(owner=request.user) | Report.objects.filter(visibility='public')).distinct().count()
+
+        # 2. Active Schedules (owned by user or all if admin? Let's stick to owned for now or permissions logic)
+        # For simplicity, let's show all active schedules for staff, or owned for normal users
+        if request.user.is_staff:
+            active_schedules = ReportSchedule.objects.filter(is_active=True).count()
+        else:
+            active_schedules = ReportSchedule.objects.filter(
+                user=request.user, is_active=True
+            ).count()
+
+        # 3. Recent Executions (Last 5)
+        # Filter by user permissions (admin sees all? or just their own?)
+        # Let's say admin sees all, users see theirs.
+        if request.user.is_staff:
+            recent_exec_qs = ReportExecution.objects.all()
+        else:
+            recent_exec_qs = ReportExecution.objects.filter(user=request.user)
+        
+        recent_executions = recent_exec_qs.select_related('report', 'user').order_by('-started_at')[:5]
+        
+        # Serialize recent executions manually or use a serializer
+        recent_executions_data = []
+        for exec in recent_executions:
+            recent_executions_data.append({
+                'id': exec.id,
+                'report_name': exec.report.name,
+                'status': exec.status,
+                'started_at': exec.started_at,
+                'user': exec.user.username
+            })
+
+        # 4. Execution Stats (Last 7 days)
+        seven_days_ago = timezone.now() - timedelta(days=7)
+        # We want counts of success/failed per day ideally, or just total in last 7 days.
+        # Let's do simple counts for now: Success vs Failed in last 7 days
+        stats_qs = recent_exec_qs.filter(started_at__gte=seven_days_ago)
+        
+        execution_stats = {
+            'success': stats_qs.filter(status='success').count(),
+            'failed': stats_qs.filter(status='failed').count(),
+            'total_last_7_days': stats_qs.count()
+        }
+
+        return Response({
+            'total_reports': total_reports,
+            'active_schedules': active_schedules,
+            'recent_executions': recent_executions_data,
+            'execution_stats': execution_stats
+        })

@@ -22,6 +22,14 @@ def run_report_task(self, execution_id):
         # Execute query
         columns, rows = execute_report_query(report, execution.parameters)
 
+        if not rows:
+            execution.status = 'success'
+            execution.error_message = 'Aucun enregistrement trouvé. Génération et routage ignorés.'
+            execution.completed_at = timezone.now()
+            execution.save(update_fields=['status', 'error_message', 'completed_at'])
+            logger.info(f"Report execution {execution_id} returned 0 rows. Skipping generation and routing.")
+            return {'status': 'success', 'execution_id': execution_id, 'message': 'empty'}
+
         # Export results
         content, content_type, extension = export_results(
             columns, rows,
@@ -98,7 +106,10 @@ def run_scheduled_report(schedule_id):
 def route_output(execution_id, routing_mode, routing_config, content, filename, content_type):
     """Route the report output to the configured destination."""
     if routing_mode == 'email':
-        _route_email(routing_config, content, filename, content_type)
+        from reports.models import ReportExecution
+        execution = ReportExecution.objects.select_related('report').get(id=execution_id)
+        default_body = execution.report.email_body or 'Veuillez trouver le rapport en pièce jointe.'
+        _route_email(routing_config, content, filename, content_type, default_body, execution_id)
     elif routing_mode == 'sftp':
         _route_sftp(routing_config, content, filename)
     elif routing_mode == 'ftp':
@@ -108,10 +119,12 @@ def route_output(execution_id, routing_mode, routing_config, content, filename, 
     # 'screen' mode doesn't need routing – file is already saved
 
 
-def _route_email(config, content, filename, content_type):
+def _route_email(config, content, filename, content_type, default_body='Veuillez trouver le rapport en pièce jointe.', execution_id=None):
     """Send report via email using stored SmtpConfig."""
     from django.core.mail import EmailMessage
     from django.core.mail.backends.smtp import EmailBackend
+    from django.conf import settings
+    from django.core.signing import Signer
     from settings_app.models import SmtpConfig
 
     recipients = config.get('recipients', [])
@@ -143,7 +156,7 @@ def _route_email(config, content, filename, content_type):
     )
 
     subject = config.get('subject', f'Rapport: {filename}')
-    body = config.get('body', 'Veuillez trouver le rapport en pièce jointe.')
+    body = config.get('body') or default_body
 
     email = EmailMessage(
         subject=subject,
@@ -152,7 +165,17 @@ def _route_email(config, content, filename, content_type):
         to=recipients,
         connection=backend,
     )
-    email.attach(filename, content, content_type)
+
+    if len(content) > settings.MAX_EMAIL_ATTACHMENT_SIZE and execution_id:
+        signer = Signer()
+        token = signer.sign(str(execution_id))
+        download_url = f"{settings.BACKEND_URL.rstrip('/')}/api/report-launcher/executions/{execution_id}/download/?token={token}"
+        
+        email.body += f"\n\nLe fichier généré est trop volumineux pour être mis en pièce jointe ({(len(content) / (1024 * 1024)):.2f} Mo)."
+        email.body += f"\nVous pouvez le télécharger via ce lien : {download_url}"
+    else:
+        email.attach(filename, content, content_type)
+
     email.send()
     logger.info(f"Report emailed to {recipients} via SMTP '{smtp.name}'")
 

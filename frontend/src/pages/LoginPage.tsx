@@ -41,7 +41,7 @@ const LoginPage: React.FC = () => {
                     <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center shadow-glow-accent">
                         <span className="text-white font-bold text-2xl">F</span>
                     </div>
-                    <h1 className="text-3xl font-bold text-white tracking-tight">FastReport</h1>
+                    <h1 className="text-3xl font-bold text-surface-900 dark:text-white tracking-tight">FastReport</h1>
                     <p className="text-surface-400 mt-2">Connectez-vous pour accéder au lanceur</p>
                 </div>
 

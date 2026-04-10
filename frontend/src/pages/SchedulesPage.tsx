@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiCalendar, FiRepeat, FiClock, FiToggleLeft, FiToggleRight, FiTrash2, FiRefreshCw } from 'react-icons/fi';
+import { FiCalendar, FiRepeat, FiClock, FiToggleLeft, FiToggleRight, FiTrash2, FiRefreshCw, FiSearch } from 'react-icons/fi';
 import api from '../api/client';
 
 interface Schedule {
@@ -31,6 +31,9 @@ function cronToHuman(cron: string): string {
 export default function SchedulesPage() {
     const [schedules, setSchedules] = useState<Schedule[]>([]);
     const [loading, setLoading] = useState(true);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [dateFrom, setDateFrom] = useState('');
+    const [dateTo, setDateTo] = useState('');
 
     useEffect(() => { loadData(); }, []);
 
@@ -65,16 +68,74 @@ export default function SchedulesPage() {
         }
     };
 
+    const filteredSchedules = schedules.filter(s => {
+        const matchText = s.report_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          s.user_username.toLowerCase().includes(searchQuery.toLowerCase());
+        
+        let matchDate = true;
+        if (dateFrom || dateTo) {
+            const schedDate = new Date(s.created_at);
+            if (dateFrom) {
+                matchDate = matchDate && schedDate >= new Date(dateFrom);
+            }
+            if (dateTo) {
+                const to = new Date(dateTo);
+                to.setHours(23, 59, 59, 999);
+                matchDate = matchDate && schedDate <= to;
+            }
+        }
+        return matchText && matchDate;
+    });
+
     return (
         <div className="space-y-6 animate-fade-in">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold text-white">Planifications</h1>
+                    <h1 className="text-2xl font-bold text-surface-900 dark:text-white">Planifications</h1>
                     <p className="text-surface-400 mt-1">Suivi des rapports planifiés</p>
                 </div>
-                <button onClick={loadData} className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-surface-400 hover:text-white transition-colors">
+                <button onClick={loadData} className="p-2 rounded-lg bg-surface-100 dark:bg-white/5 hover:bg-surface-200 dark:hover:bg-white/10 text-surface-400 hover:text-surface-900 dark:hover:text-white transition-colors">
                     <FiRefreshCw size={18} />
                 </button>
+            </div>
+
+            <div className="glass-card p-4">
+                <div className="flex flex-col md:flex-row gap-4">
+                    <div className="relative flex-1">
+                        <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-surface-600 dark:text-surface-400" />
+                        <input
+                            type="text"
+                            placeholder="Rechercher une planification (rapport ou utilisateur)..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="input-field pl-10 w-full"
+                        />
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <span className="text-surface-600 dark:text-surface-400 text-sm">Du</span>
+                        <input
+                            type="date"
+                            value={dateFrom}
+                            onChange={(e) => setDateFrom(e.target.value)}
+                            className="input-field text-sm"
+                        />
+                        <span className="text-surface-600 dark:text-surface-400 text-sm">Au</span>
+                        <input
+                            type="date"
+                            value={dateTo}
+                            onChange={(e) => setDateTo(e.target.value)}
+                            className="input-field text-sm"
+                        />
+                        {(dateFrom || dateTo) && (
+                            <button
+                                onClick={() => { setDateFrom(''); setDateTo(''); }}
+                                className="ml-2 text-xs text-surface-600 dark:text-surface-400 hover:text-surface-900 dark:hover:text-white underline min-w-max"
+                            >
+                                Effacer
+                            </button>
+                        )}
+                    </div>
+                </div>
             </div>
 
             <div className="glass-card overflow-hidden">
@@ -82,25 +143,27 @@ export default function SchedulesPage() {
                     <div className="p-12 text-center text-surface-400">Chargement...</div>
                 ) : schedules.length === 0 ? (
                     <div className="p-12 text-center text-surface-400">Aucune planification configurée</div>
+                ) : filteredSchedules.length === 0 ? (
+                    <div className="p-12 text-center text-surface-400">Aucun résultat pour "{searchQuery}"</div>
                 ) : (
                     <table className="w-full">
                         <thead>
-                            <tr className="border-b border-white/10">
-                                <th className="text-left p-4 text-xs font-medium text-slate-400 uppercase tracking-wider">Rapport</th>
-                                <th className="text-left p-4 text-xs font-medium text-slate-400 uppercase tracking-wider">Utilisateur</th>
-                                <th className="text-left p-4 text-xs font-medium text-slate-400 uppercase tracking-wider">Type</th>
-                                <th className="text-left p-4 text-xs font-medium text-slate-400 uppercase tracking-wider">Planification</th>
-                                <th className="text-left p-4 text-xs font-medium text-slate-400 uppercase tracking-wider">Sortie</th>
-                                <th className="text-left p-4 text-xs font-medium text-slate-400 uppercase tracking-wider">Routage</th>
-                                <th className="text-left p-4 text-xs font-medium text-slate-400 uppercase tracking-wider">Statut</th>
-                                <th className="text-left p-4 text-xs font-medium text-slate-400 uppercase tracking-wider">Actions</th>
+                            <tr className="border-b border-surface-200 dark:border-white/10">
+                                <th className="text-left p-4 text-xs font-medium text-surface-600 dark:text-surface-400 uppercase tracking-wider">Rapport</th>
+                                <th className="text-left p-4 text-xs font-medium text-surface-600 dark:text-surface-400 uppercase tracking-wider">Utilisateur</th>
+                                <th className="text-left p-4 text-xs font-medium text-surface-600 dark:text-surface-400 uppercase tracking-wider">Type</th>
+                                <th className="text-left p-4 text-xs font-medium text-surface-600 dark:text-surface-400 uppercase tracking-wider">Planification</th>
+                                <th className="text-left p-4 text-xs font-medium text-surface-600 dark:text-surface-400 uppercase tracking-wider">Sortie</th>
+                                <th className="text-left p-4 text-xs font-medium text-surface-600 dark:text-surface-400 uppercase tracking-wider">Routage</th>
+                                <th className="text-left p-4 text-xs font-medium text-surface-600 dark:text-surface-400 uppercase tracking-wider">Statut</th>
+                                <th className="text-left p-4 text-xs font-medium text-surface-600 dark:text-surface-400 uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {schedules.map(s => (
-                                <tr key={s.id} className={`border-b border-white/5 hover:bg-white/[0.02] transition-colors ${!s.is_active ? 'opacity-50' : ''}`}>
-                                    <td className="p-4 font-medium text-white">{s.report_name}</td>
-                                    <td className="p-4 text-sm text-slate-400">{s.user_username}</td>
+                            {filteredSchedules.map(s => (
+                                <tr key={s.id} className={`border-b border-surface-200 dark:border-white/5 hover:bg-white/[0.02] transition-colors ${!s.is_active ? 'opacity-50' : ''}`}>
+                                    <td className="p-4 font-medium text-surface-900 dark:text-white">{s.report_name}</td>
+                                    <td className="p-4 text-sm text-surface-600 dark:text-surface-400">{s.user_username}</td>
                                     <td className="p-4">
                                         <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${s.schedule_type === 'recurring'
                                             ? 'bg-purple-500/10 text-purple-400'
@@ -110,7 +173,7 @@ export default function SchedulesPage() {
                                             {s.schedule_type === 'recurring' ? 'Récurrent' : 'Une fois'}
                                         </span>
                                     </td>
-                                    <td className="p-4 text-sm text-slate-300">
+                                    <td className="p-4 text-sm text-surface-700 dark:text-surface-300">
                                         {s.schedule_type === 'recurring'
                                             ? cronToHuman(s.cron_expression)
                                             : s.scheduled_at
@@ -118,8 +181,8 @@ export default function SchedulesPage() {
                                                 : '—'
                                         }
                                     </td>
-                                    <td className="p-4"><span className="px-2 py-0.5 rounded text-xs bg-white/5 text-slate-300">{s.output_type}</span></td>
-                                    <td className="p-4"><span className="px-2 py-0.5 rounded text-xs bg-white/5 text-slate-300">{s.routing_mode}</span></td>
+                                    <td className="p-4"><span className="px-2 py-0.5 rounded text-xs bg-surface-100 dark:bg-white/5 text-surface-700 dark:text-surface-300">{s.output_type}</span></td>
+                                    <td className="p-4"><span className="px-2 py-0.5 rounded text-xs bg-surface-100 dark:bg-white/5 text-surface-700 dark:text-surface-300">{s.routing_mode}</span></td>
                                     <td className="p-4">
                                         <button onClick={() => toggleActive(s.id)} className="flex items-center gap-1.5" title={s.is_active ? 'Désactiver' : 'Activer'}>
                                             {s.is_active ? (
@@ -127,7 +190,7 @@ export default function SchedulesPage() {
                                                     <FiToggleRight size={14} /> Actif
                                                 </span>
                                             ) : (
-                                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-slate-500/10 text-slate-400">
+                                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-slate-500/10 text-surface-600 dark:text-surface-400">
                                                     <FiToggleLeft size={14} /> Inactif
                                                 </span>
                                             )}
@@ -136,7 +199,7 @@ export default function SchedulesPage() {
                                     <td className="p-4">
                                         <button
                                             onClick={() => deleteSchedule(s.id, s.report_name)}
-                                            className="p-2 rounded-lg hover:bg-red-500/10 text-slate-400 hover:text-red-400 transition-colors"
+                                            className="p-2 rounded-lg hover:bg-red-500/10 text-surface-600 dark:text-surface-400 hover:text-red-400 transition-colors"
                                             title="Supprimer"
                                         >
                                             <FiTrash2 size={16} />

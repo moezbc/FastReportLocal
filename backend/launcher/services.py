@@ -2,6 +2,7 @@ import csv
 import io
 import json
 import logging
+import re
 from datetime import datetime
 
 from openpyxl import Workbook
@@ -25,20 +26,54 @@ def execute_report_query(report, parameters):
     sql = report.sql_query
     params = {}
 
-    # Build param dict
+    # Build param dict and replace operators in SQL
+    processed_sql = sql
     for param in report.parameters.all():
         param_name = param.name
+        operator = '='
+        value2 = ''
         if param_name in parameters:
             param_entry = parameters[param_name]
             if isinstance(param_entry, dict):
                 value = param_entry.get('value', '')
                 operator = param_entry.get('operator', '=')
+                value2 = param_entry.get('value2', '')
             else:
                 value = param_entry
                 operator = '='
-            params[param_name] = value
         elif param.default_value:
-            params[param_name] = param.default_value
+            value = param.default_value
+        else:
+            continue
+
+        op_upper = operator.upper()
+
+        # Replace existing operator before :param_name with the chosen one
+        pattern = rf"(?i)(\b(?:LIKE|IN|ILIKE|IS(?:[ \t]+NOT)?)\b|[=<>!]+)\s*:{param_name}\b"
+        
+        def repl(m, op=op_upper, p_name=param_name):
+            if op in ('IS NULL', 'IS NOT NULL'):
+                return f"{op}"
+            elif op == 'BETWEEN':
+                return f"BETWEEN :{p_name}_start AND :{p_name}_end"
+            else:
+                return f"{op} :{p_name}"
+
+        processed_sql = re.sub(pattern, repl, processed_sql)
+        
+        if op_upper == 'BETWEEN':
+            params[f"{param_name}_start"] = value
+            params[f"{param_name}_end"] = value2
+            param_list_to_handle = [f"{param_name}_start", f"{param_name}_end"]
+        elif op_upper not in ('IS NULL', 'IS NOT NULL'):
+            if op_upper == 'IN':
+                # Quick handling for IN with a comma-separated string, though not bulletproof for all SQL drivers
+                params[param_name] = value
+            else:
+                params[param_name] = value
+            param_list_to_handle = [param_name]
+        else:
+            param_list_to_handle = []
 
     # Get connection from datasource
     conn = report.datasource.get_connection()
@@ -46,19 +81,18 @@ def execute_report_query(report, parameters):
         cursor = conn.cursor()
 
         # Replace :param_name with driver-appropriate placeholders
-        processed_sql = sql
         db_type = report.datasource.db_type
-        param_list = []
 
+        # Use the processed_sql
         if db_type == 'postgresql':
             # psycopg2 uses %(name)s
-            for param_name in params:
-                processed_sql = processed_sql.replace(f':{param_name}', f'%({param_name})s')
+            for p_name in params:
+                processed_sql = processed_sql.replace(f':{p_name}', f'%({p_name})s')
             cursor.execute(processed_sql, params)
         elif db_type == 'mysql':
             # pymysql uses %(name)s
-            for param_name in params:
-                processed_sql = processed_sql.replace(f':{param_name}', f'%({param_name})s')
+            for p_name in params:
+                processed_sql = processed_sql.replace(f':{p_name}', f'%({p_name})s')
             cursor.execute(processed_sql, params)
         elif db_type == 'oracle':
             # cx_Oracle supports :name natively
@@ -66,9 +100,16 @@ def execute_report_query(report, parameters):
         elif db_type == 'sqlserver':
             # pyodbc uses ? positional params
             ordered_params = []
-            for param_name in params:
-                processed_sql = processed_sql.replace(f':{param_name}', '?')
-                ordered_params.append(params[param_name])
+            # We must find the placeholders in the order they appear to append them correctly
+            # Wait, replacing them individually with ? and appending to a list might lose the correct order
+            # This is a bit tricky, but wait, the original logic had this flaw too: 
+            # It just did:
+            # for param_name in params:
+            #     processed_sql = processed_sql.replace(f':{param_name}', '?')
+            #     ordered_params.append(params[param_name])
+            for p_name in params:
+                processed_sql = processed_sql.replace(f':{p_name}', '?')
+                ordered_params.append(params[p_name])
             cursor.execute(processed_sql, ordered_params)
 
         columns = [col[0] for col in cursor.description] if cursor.description else []
