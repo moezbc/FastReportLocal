@@ -28,9 +28,11 @@ Write-Host "Installation des dépendances Python..."
 pip install -r requirements.txt
 
 # Fichier .env
-if (-Not (Test-Path ".env")) {
-    Write-Host "Création d'un fichier .env vierge. Pensez à le configurer." -ForegroundColor Yellow
-    New-Item -ItemType File -Name ".env" -Force | Out-Null
+if (-Not (Test-Path ".\backend\.env")) {
+    Write-Host "Copie de .env.example vers backend\.env. Pensez à le configurer." -ForegroundColor Yellow
+    if (Test-Path ".\.env.example") {
+        Copy-Item -Path ".\.env.example" -Destination ".\backend\.env"
+    }
 }
 
 Write-Host "Migration de la base de données et collecte statique..."
