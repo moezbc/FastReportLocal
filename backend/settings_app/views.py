@@ -15,10 +15,7 @@ class DataSourceViewSet(viewsets.ModelViewSet):
     serializer_class = DataSourceSerializer
     permission_classes = [permissions.IsAdminUser]
 
-    def get_serializer_class(self):
-        if self.action == 'list':
-            return DataSourceListSerializer
-        return DataSourceSerializer
+
 
     @action(detail=True, methods=['post'], url_path='test-connection')
     def test_connection(self, request, pk=None):

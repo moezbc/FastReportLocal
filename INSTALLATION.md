@@ -63,7 +63,11 @@ chmod +x install_linux.sh
 ```
 Ce script installera `unixodbc-dev`, `python3-venv`, `redis-server`, compilera votre frontend et backend, et préparera votre environnement.
 
-Puis, nous recommandons de configurer les services via Gunicorn/SystemD (suivez le fichier `deploy_ubuntu_guide.md` présent dans le projet).
+### Transformer en Vrai Services de fond (Recommandé)
+
+Pour éviter d'avoir à lancer `start.bat` manuellement, et pour que l'application redémarre toute seule au boot :
+- **Sous Windows** : Exécutez le script (en Admin) `install_windows_services.ps1`. Il téléchargera l'outil officiel NSSM et vous créera proprement 5 Services Windows (Moteur Web, Planificateur, etc) visibles dans votre gestionnaire "services.msc".
+- **Sous Linux** : Exécutez simplement la commande `sudo ./install_linux_services.sh`. Elle déploiera tout l'environnement dans le système natif `systemd` !
 
 ---
 

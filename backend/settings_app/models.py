@@ -92,12 +92,23 @@ class DataSource(models.Model):
             )
         elif self.db_type == 'sqlserver':
             import pyodbc
+            available_drivers = pyodbc.drivers()
+            driver = "SQL Server"  # Fallback par défaut inclus dans Windows
+            
+            # Recherche du meilleur pilote disponible
+            for d in ['ODBC Driver 18 for SQL Server', 'ODBC Driver 17 for SQL Server', 'ODBC Driver 13 for SQL Server']:
+                if d in available_drivers:
+                    driver = d
+                    break
+                    
             conn_str = (
-                f"DRIVER={{ODBC Driver 17 for SQL Server}};"
+                f"DRIVER={{{driver}}};"
                 f"SERVER={self.host},{self.port};"
                 f"DATABASE={self.database_name};"
-                f"UID={self.username};PWD={self.password}"
+                f"UID={self.username};PWD={{{self.password}}};"
             )
+            if 'ODBC Driver' in driver:
+                conn_str += "TrustServerCertificate=yes;"
             return pyodbc.connect(conn_str, **self.options)
         else:
             raise ValueError(f"Type de base non supporté : {self.db_type}")

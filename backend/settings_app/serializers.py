@@ -12,7 +12,7 @@ class DataSourceSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
         extra_kwargs = {
-            'password': {'write_only': True, 'required': False},
+            'password': {'write_only': True, 'required': False, 'allow_blank': True},
         }
 
     def to_representation(self, instance):
@@ -45,7 +45,7 @@ class SmtpConfigSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
         extra_kwargs = {
-            'password': {'write_only': True, 'required': False},
+            'password': {'write_only': True, 'required': False, 'allow_blank': True},
         }
 
     def to_representation(self, instance):
@@ -71,7 +71,7 @@ class FtpConfigSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
         extra_kwargs = {
-            'password': {'write_only': True, 'required': False},
+            'password': {'write_only': True, 'required': False, 'allow_blank': True},
         }
 
     def to_representation(self, instance):
