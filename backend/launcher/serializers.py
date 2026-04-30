@@ -37,6 +37,7 @@ class LauncherReportDetailSerializer(serializers.ModelSerializer):
             'id', 'name', 'description', 'owner_username',
             'visibility', 'output_types', 'routing_modes',
             'csv_separator', 'parameters', 'updated_at',
+            'embed_results', 'email_body_header', 'email_body_footer', 'email_body',
         ]
 
 

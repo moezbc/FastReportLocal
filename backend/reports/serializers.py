@@ -31,7 +31,9 @@ class ReportListSerializer(serializers.ModelSerializer):
             'id', 'name', 'description', 'owner', 'owner_username',
             'datasource', 'datasource_name',
             'visibility', 'output_types', 'routing_modes',
-            'csv_separator', 'category', 'email_body', 'created_at', 'updated_at',
+            'csv_separator', 'category', 'email_body', 
+            'embed_results', 'email_body_header', 'email_body_footer',
+            'created_at', 'updated_at',
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
 
@@ -49,6 +51,7 @@ class ReportDetailSerializer(serializers.ModelSerializer):
             'datasource', 'datasource_name',
             'visibility', 'output_types', 'routing_modes', 'csv_separator',
             'category', 'email_body',
+            'embed_results', 'email_body_header', 'email_body_footer',
             'parameters', 'permissions',
             'created_at', 'updated_at',
         ]
@@ -64,6 +67,7 @@ class ReportCreateUpdateSerializer(serializers.ModelSerializer):
             'id', 'name', 'description', 'sql_query', 'datasource',
             'visibility', 'output_types', 'routing_modes', 'csv_separator',
             'category', 'email_body',
+            'embed_results', 'email_body_header', 'email_body_footer',
             'parameters',
         ]
         read_only_fields = ['id']

@@ -99,7 +99,11 @@ const LauncherPage: React.FC = () => {
             // Set defaults
             setOutputType(detail.output_types[0] || 'CSV');
             setRoutingMode(detail.routing_modes[0] || 'screen');
-            setRoutingConfig({});
+            setRoutingConfig({
+                embed_results: detail.embed_results || false,
+                email_body_header: detail.email_body_header || '',
+                email_body_footer: detail.email_body_footer || '',
+            });
             setExecutionMode('immediate');
         } catch {
             setErrorMessage("Erreur lors du chargement du rapport.");

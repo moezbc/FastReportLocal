@@ -16,6 +16,9 @@ export interface Report {
     csv_separator: string;
     category?: string | null;
     email_body?: string;
+    embed_results?: boolean;
+    email_body_header?: string;
+    email_body_footer?: string;
     parameters?: ReportParameter[];
     permissions?: ReportPermission[];
     created_at: string;

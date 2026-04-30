@@ -240,3 +240,55 @@ def _serialize_value(value):
     if isinstance(value, datetime):
         return value.isoformat()
     return value
+
+def build_html_email_body(columns, rows, header_text, footer_text, max_rows=100):
+    """
+    Builds an HTML email body with the query results embedded as a table.
+    Limits the number of rows displayed to max_rows to prevent overly large emails.
+    """
+    import html
+    html_parts = [
+        '<div style="font-family: Arial, sans-serif; color: #333; max-width: 1000px; margin: 0 auto;">'
+    ]
+
+    if header_text:
+        # Convert newlines to <br> for HTML display
+        header_html = html.escape(header_text).replace('\n', '<br>')
+        html_parts.append(f'<p style="margin-bottom: 20px;">{header_html}</p>')
+
+    if columns and rows is not None:
+        html_parts.append('<div style="overflow-x: auto;">')
+        html_parts.append('<table style="border-collapse: collapse; width: 100%; margin: 20px 0; font-size: 14px; text-align: left;">')
+        
+        # Header
+        html_parts.append('<thead>')
+        html_parts.append('<tr style="background-color: #1F4E79; color: white;">')
+        for col in columns:
+            html_parts.append(f'<th style="padding: 10px 12px; border: 1px solid #ddd;">{html.escape(str(col))}</th>')
+        html_parts.append('</tr>')
+        html_parts.append('</thead>')
+        
+        # Body
+        html_parts.append('<tbody>')
+        for i, row in enumerate(rows[:max_rows]):
+            bg_color = "#f9f9f9" if i % 2 != 0 else "#ffffff"
+            html_parts.append(f'<tr style="background-color: {bg_color};">')
+            for val in row:
+                str_val = str(_serialize_value(val))
+                html_parts.append(f'<td style="padding: 8px 12px; border: 1px solid #ddd;">{html.escape(str_val)}</td>')
+            html_parts.append('</tr>')
+        html_parts.append('</tbody>')
+        
+        html_parts.append('</table>')
+        html_parts.append('</div>')
+
+        if len(rows) > max_rows:
+            html_parts.append(f'<p style="font-size: 12px; color: #666; font-style: italic;">Seules les {max_rows} premières lignes sont affichées ci-dessus. Veuillez consulter la pièce jointe (ou le lien de téléchargement) pour les données complètes.</p>')
+
+    if footer_text:
+        footer_html = html.escape(footer_text).replace('\n', '<br>')
+        html_parts.append(f'<div style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 10px;">{footer_html}</div>')
+
+    html_parts.append('</div>')
+
+    return '\n'.join(html_parts)

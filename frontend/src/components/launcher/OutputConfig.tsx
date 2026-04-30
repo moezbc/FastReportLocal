@@ -5,6 +5,8 @@ import {
     HiOutlineServerStack,
     HiOutlineFolderOpen,
     HiOutlineGlobeAlt,
+    HiOutlineTableCells,
+    HiOutlineInformationCircle,
 } from 'react-icons/hi2';
 
 interface OutputConfigProps {
@@ -16,6 +18,7 @@ interface OutputConfigProps {
     onOutputTypeChange: (type: string) => void;
     onRoutingModeChange: (mode: string) => void;
     onRoutingConfigChange: (config: Record<string, unknown>) => void;
+    /** Champs du rapport pour afficher l'aperçu embed */
 }
 
 const routingIcons: Record<string, React.ReactNode> = {
@@ -44,6 +47,9 @@ const OutputConfig: React.FC<OutputConfigProps> = ({
     onRoutingModeChange,
     onRoutingConfigChange,
 }) => {
+    const embedResults = routingConfig.embed_results as boolean | undefined;
+    const emailBodyHeader = routingConfig.email_body_header as string | undefined;
+    const emailBodyFooter = routingConfig.email_body_footer as string | undefined;
     return (
         <div className="space-y-5">
             {/* Output type */}
@@ -81,24 +87,71 @@ const OutputConfig: React.FC<OutputConfigProps> = ({
                 </div>
             </div>
 
-            {/* Routing config: email recipients */}
+            {/* Routing config: email */}
             {selectedRoutingMode === 'email' && (
-                <div className="animate-fade-in">
-                    <label className="label-text">Destinataires email</label>
-                    <input
-                        type="text"
-                        value={(routingConfig.recipients as string[] || []).join(', ')}
-                        onChange={(e) => {
-                            const recipients = e.target.value
-                                .split(',')
-                                .map((r) => r.trim())
-                                .filter(Boolean);
-                            onRoutingConfigChange({ ...routingConfig, recipients });
-                        }}
-                        placeholder="email1@exemple.com, email2@exemple.com"
-                        className="input-field"
-                    />
-                    <p className="text-xs text-surface-500 mt-1">Séparez les adresses par des virgules</p>
+                <div className="animate-fade-in space-y-3">
+                    {/* Embed results configuration */}
+                    <div className="space-y-4 pt-2 border-t border-surface-200 dark:border-white/5">
+                        <label className="flex items-center gap-2 text-sm text-surface-700 dark:text-surface-300 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                checked={embedResults || false}
+                                onChange={(e) => onRoutingConfigChange({ ...routingConfig, embed_results: e.target.checked })}
+                                className="rounded border-surface-300 dark:border-white/20 bg-surface-100 dark:bg-white/5 text-primary-500 focus:ring-primary-500"
+                            />
+                            <span className="font-medium">Intégrer les résultats dans le corps de l'email (Tableau HTML)</span>
+                        </label>
+                        {embedResults ? (
+                            <div className="space-y-4 pl-6 border-l-2 border-primary-500/30 ml-2">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <HiOutlineTableCells className="w-5 h-5 text-primary-400" />
+                                    <span className="text-xs text-primary-400">Les résultats (max 100 lignes) seront insérés en HTML dans l'email.</span>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">Texte d'introduction</label>
+                                    <textarea
+                                        value={emailBodyHeader || ''}
+                                        onChange={(e) => onRoutingConfigChange({ ...routingConfig, email_body_header: e.target.value })}
+                                        className="input-field w-full h-20 resize-y"
+                                        placeholder="Bonjour, veuillez trouver ci-dessous les résultats du rapport..."
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">Signature / Texte de fin</label>
+                                    <textarea
+                                        value={emailBodyFooter || ''}
+                                        onChange={(e) => onRoutingConfigChange({ ...routingConfig, email_body_footer: e.target.value })}
+                                        className="input-field w-full h-20 resize-y"
+                                        placeholder="Cordialement, l'équipe..."
+                                    />
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="flex items-center gap-2 p-2.5 rounded-lg bg-surface-800/40 border border-surface-700/40">
+                                <HiOutlineInformationCircle className="w-4 h-4 text-surface-500 flex-shrink-0" />
+                                <p className="text-xs text-surface-500">Le rapport sera envoyé en pièce jointe.</p>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Recipients */}
+                    <div>
+                        <label className="label-text">Destinataires email</label>
+                        <input
+                            type="text"
+                            value={(routingConfig.recipients as string[] || []).join(', ')}
+                            onChange={(e) => {
+                                const recipients = e.target.value
+                                    .split(',')
+                                    .map((r) => r.trim())
+                                    .filter(Boolean);
+                                onRoutingConfigChange({ ...routingConfig, recipients });
+                            }}
+                            placeholder="email1@exemple.com, email2@exemple.com"
+                            className="input-field"
+                        />
+                        <p className="text-xs text-surface-500 mt-1">Séparez les adresses par des virgules</p>
+                    </div>
                 </div>
             )}
 

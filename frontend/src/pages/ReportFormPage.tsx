@@ -31,6 +31,9 @@ export default function ReportFormPage() {
         csv_separator: ',',
         category: '',
         email_body: '',
+        embed_results: false,
+        email_body_header: '',
+        email_body_footer: '',
     });
 
     const [parameters, setParameters] = useState<ReportParameter[]>([]);
@@ -55,6 +58,9 @@ export default function ReportFormPage() {
                     csv_separator: d.csv_separator || ',',
                     category: d.category || '',
                     email_body: d.email_body || '',
+                    embed_results: d.embed_results || false,
+                    email_body_header: d.email_body_header || '',
+                    email_body_footer: d.email_body_footer || '',
                 });
                 setParameters(d.parameters || []);
             }).catch(e => setError('Erreur de chargement du rapport'));
@@ -396,14 +402,42 @@ export default function ReportFormPage() {
                             </div>
                         </div>
                         {form.routing_modes.includes('email') && (
-                            <div>
-                                <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">Corps de l'email</label>
-                                <textarea
-                                    value={form.email_body}
-                                    onChange={e => setForm({ ...form, email_body: e.target.value })}
-                                    className="input-field w-full h-32 resize-y" placeholder="Bonjour, voici le rapport demandé..."
-                                />
-                                <p className="text-xs text-surface-500 mt-1">Sera utilisé comme contenu du message lors de l'envoi par email.</p>
+                            <div className="space-y-4 pt-2 border-t border-surface-200 dark:border-white/5">
+                                <label className="flex items-center gap-2 text-sm text-surface-700 dark:text-surface-300 cursor-pointer">
+                                    <input type="checkbox" checked={form.embed_results} onChange={e => setForm({ ...form, embed_results: e.target.checked })}
+                                        className="rounded border-surface-300 dark:border-white/20 bg-surface-100 dark:bg-white/5 text-violet-500 focus:ring-violet-500" />
+                                    <span className="font-medium">Intégrer les résultats dans le corps de l'email (Tableau HTML)</span>
+                                </label>
+                                {form.embed_results ? (
+                                    <div className="space-y-4 pl-6 border-l-2 border-violet-500/30 ml-2">
+                                        <div>
+                                            <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">Texte d'introduction</label>
+                                            <textarea
+                                                value={form.email_body_header}
+                                                onChange={e => setForm({ ...form, email_body_header: e.target.value })}
+                                                className="input-field w-full h-24 resize-y" placeholder="Bonjour, veuillez trouver ci-dessous les résultats du rapport..."
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">Signature / Texte de fin</label>
+                                            <textarea
+                                                value={form.email_body_footer}
+                                                onChange={e => setForm({ ...form, email_body_footer: e.target.value })}
+                                                className="input-field w-full h-24 resize-y" placeholder="Cordialement, l'équipe..."
+                                            />
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div>
+                                        <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">Corps de l'email</label>
+                                        <textarea
+                                            value={form.email_body}
+                                            onChange={e => setForm({ ...form, email_body: e.target.value })}
+                                            className="input-field w-full h-32 resize-y" placeholder="Bonjour, voici le rapport demandé..."
+                                        />
+                                        <p className="text-xs text-surface-500 mt-1">Sera utilisé comme contenu du message lors de l'envoi par email (la pièce jointe sera ajoutée automatiquement).</p>
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>

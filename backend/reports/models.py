@@ -77,6 +77,21 @@ class Report(models.Model):
         verbose_name="Corps de l'email",
         help_text="Corps du message lors de l'envoi par email"
     )
+    embed_results = models.BooleanField(
+        default=False,
+        verbose_name="Intégrer les résultats dans l'email",
+        help_text="Si activé, les résultats seront insérés en tant que tableau HTML dans le corps de l'email"
+    )
+    email_body_header = models.TextField(
+        blank=True, default='',
+        verbose_name="Texte d'introduction email",
+        help_text="Texte affiché avant le tableau des résultats dans l'email"
+    )
+    email_body_footer = models.TextField(
+        blank=True, default='',
+        verbose_name="Signature / Texte de fin email",
+        help_text="Texte affiché après le tableau des résultats (signature)"
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

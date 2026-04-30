@@ -43,7 +43,7 @@ def run_report_task(self, execution_id):
 
         # Route output
         if execution.routing_mode != 'screen':
-            route_output(execution.id, execution.routing_mode, execution.routing_config, content, filename, content_type)
+            route_output(execution.id, execution.routing_mode, execution.routing_config, content, filename, content_type, columns, rows)
 
         execution.status = 'success'
         execution.completed_at = timezone.now()
@@ -103,13 +103,28 @@ def run_scheduled_report(schedule_id):
         logger.error(f"Scheduled report {schedule_id} failed: {exc}")
 
 
-def route_output(execution_id, routing_mode, routing_config, content, filename, content_type):
+def route_output(execution_id, routing_mode, routing_config, content, filename, content_type, columns=None, rows=None):
     """Route the report output to the configured destination."""
     if routing_mode == 'email':
         from reports.models import ReportExecution
+        from .services import build_html_email_body
+
         execution = ReportExecution.objects.select_related('report').get(id=execution_id)
-        default_body = execution.report.email_body or 'Veuillez trouver le rapport en pièce jointe.'
-        _route_email(routing_config, content, filename, content_type, default_body, execution_id)
+        report = execution.report
+
+        # Use values from routing_config if present, otherwise fallback to report defaults
+        embed_results = routing_config.get('embed_results', report.embed_results)
+
+        if embed_results and columns is not None and rows is not None:
+            header = routing_config.get('email_body_header', report.email_body_header)
+            footer = routing_config.get('email_body_footer', report.email_body_footer)
+            body = build_html_email_body(columns, rows, header, footer)
+            content_subtype = 'html'
+        else:
+            body = report.email_body or 'Veuillez trouver le rapport en pièce jointe.'
+            content_subtype = 'plain'
+
+        _route_email(routing_config, content, filename, content_type, body, execution_id, content_subtype)
     elif routing_mode == 'sftp':
         _route_sftp(routing_config, content, filename)
     elif routing_mode == 'ftp':
@@ -119,7 +134,7 @@ def route_output(execution_id, routing_mode, routing_config, content, filename, 
     # 'screen' mode doesn't need routing – file is already saved
 
 
-def _route_email(config, content, filename, content_type, default_body='Veuillez trouver le rapport en pièce jointe.', execution_id=None):
+def _route_email(config, content, filename, content_type, default_body='Veuillez trouver le rapport en pièce jointe.', execution_id=None, content_subtype='plain'):
     """Send report via email using stored SmtpConfig."""
     from django.core.mail import EmailMessage
     from django.core.mail.backends.smtp import EmailBackend
@@ -156,7 +171,7 @@ def _route_email(config, content, filename, content_type, default_body='Veuillez
     )
 
     subject = config.get('subject', f'Rapport: {filename}')
-    body = config.get('body') or default_body
+    body = default_body  # Always use the pre-built body (HTML or plain), never override from routing_config
 
     email = EmailMessage(
         subject=subject,
@@ -165,6 +180,8 @@ def _route_email(config, content, filename, content_type, default_body='Veuillez
         to=recipients,
         connection=backend,
     )
+    if content_subtype == 'html':
+        email.content_subtype = 'html'
 
     if len(content) > settings.MAX_EMAIL_ATTACHMENT_SIZE and execution_id:
         signer = Signer()

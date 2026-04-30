@@ -35,6 +35,10 @@ export interface ReportDetail {
     csv_separator: string;
     parameters: ReportParameter[];
     updated_at: string;
+    embed_results: boolean;
+    email_body_header: string;
+    email_body_footer: string;
+    email_body: string;
 }
 
 export interface RunImmediatePayload {
