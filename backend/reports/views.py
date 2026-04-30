@@ -71,12 +71,25 @@ class ReportViewSet(viewsets.ModelViewSet):
                 # For Oracle, replace :param_name placeholders directly
                 if report.datasource.db_type == 'oracle':
                     cursor.execute(sql, params)
+                elif report.datasource.db_type == 'sqlserver':
+                    processed_sql = sql
+                    ordered_params = []
+                    for param_name in params:
+                        processed_sql = processed_sql.replace(f':{param_name}', '?')
+                        ordered_params.append(params[param_name])
+                    if ordered_params:
+                        cursor.execute(processed_sql, ordered_params)
+                    else:
+                        cursor.execute(processed_sql)
                 else:
                     # For PostgreSQL/MySQL, replace :param with %(param)s
                     processed_sql = sql
                     for param_name in params:
                         processed_sql = processed_sql.replace(f':{param_name}', f'%({param_name})s')
-                    cursor.execute(processed_sql, params)
+                    if params:
+                        cursor.execute(processed_sql, params)
+                    else:
+                        cursor.execute(processed_sql)
 
                 columns = [col[0] for col in cursor.description] if cursor.description else []
                 rows = cursor.fetchmany(100)
@@ -89,7 +102,10 @@ class ReportViewSet(viewsets.ModelViewSet):
                     processed_sql = sql
                     for param_name in params:
                         processed_sql = processed_sql.replace(f':{param_name}', f'%({param_name})s')
-                    cursor.execute(processed_sql, params)
+                    if params:
+                        cursor.execute(processed_sql, params)
+                    else:
+                        cursor.execute(processed_sql)
                     columns = [col[0] for col in cursor.description] if cursor.description else []
                     rows = cursor.fetchmany(100)
 

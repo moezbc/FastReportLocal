@@ -110,7 +110,10 @@ def execute_report_query(report, parameters):
             for p_name in params:
                 processed_sql = processed_sql.replace(f':{p_name}', '?')
                 ordered_params.append(params[p_name])
-            cursor.execute(processed_sql, ordered_params)
+            if ordered_params:
+                cursor.execute(processed_sql, ordered_params)
+            else:
+                cursor.execute(processed_sql)
 
         columns = [col[0] for col in cursor.description] if cursor.description else []
         rows = cursor.fetchall()
