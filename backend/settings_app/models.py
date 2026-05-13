@@ -1,11 +1,17 @@
 from django.db import models
+import platform
+import os
 import oracledb
 import logging
 
 logger = logging.getLogger(__name__)
 
 try:
-    oracledb.init_oracle_client(lib_dir=r"C:\oracle\instantclient")
+    if platform.system() == "Windows":
+        oracledb.init_oracle_client(lib_dir=r"C:\oracle\instantclient")
+    else:
+        # On Linux, assuming Oracle Instant Client is installed in /opt/oracle/instantclient
+        oracledb.init_oracle_client(lib_dir="/opt/oracle/instantclient")
 except Exception as e:
     # This is expected if Oracle Client libraries are not found or if the OS is not compatible
     # The app should continue to functionality, but Oracle connections might fail with "Thin mode" errors
