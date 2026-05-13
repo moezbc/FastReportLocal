@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     libpq-dev \
     unixodbc-dev \
-    libaio1 \
+    libaio1t64 \
     wget \
     unzip \
     && mkdir -p /opt/oracle \
