@@ -2,6 +2,7 @@ import React from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import ThemeToggle from '../ThemeToggle';
+import ChatbotFab from '../ChatbotFab';
 import {
     HiOutlineRocketLaunch,
     HiOutlineArrowRightOnRectangle,
@@ -111,6 +112,9 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
             <main className="flex-1 overflow-y-auto p-8">
                 {children}
             </main>
+            
+            {/* Global Chatbot */}
+            <ChatbotFab />
         </div>
     );
 };
