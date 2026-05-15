@@ -102,7 +102,7 @@ class DataSource(models.Model):
             driver = "SQL Server"  # Fallback par défaut inclus dans Windows
             
             # Recherche du meilleur pilote disponible
-            for d in ['ODBC Driver 18 for SQL Server', 'ODBC Driver 17 for SQL Server', 'ODBC Driver 13 for SQL Server']:
+            for d in ['ODBC Driver 18 for SQL Server', 'ODBC Driver 17 for SQL Server', 'ODBC Driver 13 for SQL Server', 'FreeTDS']:
                 if d in available_drivers:
                     driver = d
                     break
