@@ -14,7 +14,7 @@ start /min "FastReport Celery Worker" cmd /k "cd backend && venv\Scripts\activat
 start /min "FastReport Celery Beat" cmd /k "cd backend && venv\Scripts\activate && celery -A config beat -l INFO"
 
 :: 4. Start Frontend
-start /min "FastReport Frontend" cmd /k "set PATH=%PATH%;C:\Program Files\nodejs && cd frontend && npm run preview"
+start /min "FastReport Frontend" cmd /k "set PATH=%PATH%;C:\Program Files\nodejs && cd frontend && npm run dev"
 
 echo All services started!
 timeout /t 5

@@ -42,7 +42,7 @@
     @apply glass-card hover:bg-white/80 dark:hover:bg-surface-800/80 hover:border-primary-500/30 hover:shadow-md dark:hover:shadow-glow cursor-pointer;
   }
 
-  .btn-primary {
+  .btn-primary, .btn-gradient {
     @apply px-5 py-2.5 bg-gradient-to-r from-primary-600 to-primary-500 text-white font-medium rounded-xl
            hover:from-primary-500 hover:to-primary-400 active:scale-[0.98]
            shadow-lg shadow-primary-600/25 hover:shadow-primary-500/40
